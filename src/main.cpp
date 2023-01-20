@@ -53,8 +53,8 @@ int main()
 	shapes[4] = shape_O;
 
 	sf::Clock clock;
-	int tickRate = 1;
-	float updateInterval = 1.0f / tickRate;
+	int tick_rate = 1;
+	float update_interval = 1.0f / tick_rate;
 	timer = 0;
 	paused = false;
 
@@ -68,7 +68,6 @@ int main()
 		{
 			if (board[y] & (1 << (BOARD_WIDTH - x) + 1))
 			{
-				//game_window_image.setPixel(x, y, block_colors[Grey]);
 				board_image.setPixel(x, y, block_colors[Grey]);
 			}
 			tet_image.setPixel(x, y, sf::Color::Transparent);
@@ -91,7 +90,7 @@ int main()
 		}
 
 		// Update
-		if (timer > updateInterval && !paused)
+		if (timer > update_interval && !paused)
 		{
 			Update(current_tet, board, board_image);
 		}

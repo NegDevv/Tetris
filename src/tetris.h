@@ -2,6 +2,8 @@
 #include <SFML/Graphics/Image.hpp>
 #include <SFML/Window/event.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
+
+
 // Tetris dimensions: 12 x 22 (including borders)
 extern const int BOARD_WIDTH;
 extern const int BOARD_HEIGHT;
@@ -60,6 +62,8 @@ void SpawnNewTet(Tetromino& tet);
 void SetTetRot(Tetromino& tet, int offset, uint16_t rot);
 
 void ResetBoard(uint16_t* board, sf::Image& board_image);
+
+void GameOver(Tetromino& tet, uint16_t* board, sf::Image& board_image);
 
 void MergeTetToBoard(Tetromino& tet, uint16_t* board, sf::Image& board_image);
 

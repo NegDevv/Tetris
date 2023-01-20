@@ -1,5 +1,6 @@
 #include <iostream>
 #include "tetris.h"
+
 // Tetris dimensions: 12 x 22 (including borders)
 const int BOARD_WIDTH = 12;
 const int BOARD_HEIGHT = 22;
@@ -333,12 +334,21 @@ void ResetBoard(uint16_t* board, sf::Image& board_image)
 	for (size_t y = 1; y < BOARD_HEIGHT - 1; y++)
 	{
 		board[y] = 0b0010000000000100;
-		for (size_t x = 1; x < BOARD_WIDTH - 1; x++) // Should we loop from 0 - 16 instead?
+		for (size_t x = 1; x < BOARD_WIDTH - 1; x++)
 		{
 			board_image.setPixel(x, y, sf::Color::Black);
 		}
 	}
 	std::cout << "Board Reset!\n";
+}
+
+void GameOver(Tetromino& tet, uint16_t* board, sf::Image& board_image)
+{
+	std::cout << "\nGame Over!\n\n";
+	ResetBoard(board, board_image);
+	timer = 0;
+	std::cout << "New Game!\n";
+	SpawnNewTet(tet);
 }
 
 void MergeTetToBoard(Tetromino& tet, uint16_t* board, sf::Image& board_image)
@@ -479,6 +489,7 @@ void HandleKeyPressed(sf::RenderWindow& target_window, sf::Keyboard::Key key, Te
 		{
 			std::cout << "Drop!\n";
 			bool collision = false;
+			collision = CollisionCheck(tet, board, DOWN);
 			while (!collision)
 			{
 				tet.y += 1;
@@ -554,12 +565,21 @@ void Update(Tetromino& tet, uint16_t* board, sf::Image& board_image)
 
 	// Collision check down
 	bool collision = CollisionCheck(tet, board, DOWN);
+	
 
 	if (collision)
 	{
-		MergeTetToBoard(tet, board, board_image);
+		if (tet.y != 1)
+		{
+			MergeTetToBoard(tet, board, board_image);
 
-		SpawnNewTet(tet);
+			SpawnNewTet(tet);
+		}
+		else
+		{
+			GameOver(tet, board, board_image);
+			return;
+		}
 	}
 	else
 	{
