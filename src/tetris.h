@@ -69,10 +69,14 @@ void MergeTetToBoard(Tetromino& tet, uint16_t* board, sf::Image& board_image);
 
 void ClearRow(uint16_t y, uint16_t* board, sf::Image& board_image);
 
-void HandleKeyPressed(sf::RenderWindow& target_window, sf::Keyboard::Key key, Tetromino& tet, uint16_t* board, sf::Image& board_image);
+void DropReprojection(Tetromino& tet, uint16_t* board, sf::Vector2i* drop_proj_pixels);
 
-void HandleInputEvent(sf::RenderWindow& target_window, sf::Event& event, Tetromino& tet, uint16_t* board, sf::Image& board_image);
+void HandleKeyPressed(sf::RenderWindow& target_window, sf::Keyboard::Key key, Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2i* drop_proj_pixels);
+
+void HandleInputEvent(sf::RenderWindow& target_window, sf::Event& event, Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2i* drop_proj_pixels);
 
 void CopyPixelRow(sf::Image& board_image, uint16_t src_y, uint16_t dest_y);
 
-void Update(Tetromino& tet, uint16_t* board, sf::Image& board_image);
+void Update(Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2i* drop_proj_pixels);
+
+void DrawTet(Tetromino& tet, sf::Image& tet_image, sf::Vector2i* drop_proj_pixels);

@@ -1,6 +1,7 @@
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include "tetris.h"
+#include <iostream>
 
 #define WINDOW_WIDTH 360
 #define WINDOW_HEIGHT 660
@@ -23,29 +24,40 @@ int main()
 	sf::Texture game_window_texture;
 	sf::Texture board_texture;
 	sf::Texture tet_texture;
+	sf::Texture block_proj_texture;
 
 	game_window_texture.create(BOARD_WIDTH, BOARD_HEIGHT);
 	board_texture.create(BOARD_WIDTH, BOARD_HEIGHT);
 	tet_texture.create(BOARD_WIDTH, BOARD_HEIGHT);
+	block_proj_texture.create(1, 1);
 
 	sf::Sprite game_window_sprite;
 	sf::Sprite board_sprite;
 	sf::Sprite tet_sprite;
+	sf::Sprite drop_proj_sprite;
+	sf::Sprite block_proj_sprite;
 
 	game_window_texture.update(game_window_image);
 	board_texture.update(board_image);
 	tet_texture.update(tet_image);
 
+	sf::Uint8 pixels[4] = { 255, 255, 255, 255 };
+	block_proj_texture.update(pixels);
+
 	game_window_sprite.setScale(sf::Vector2f(SPRITE_SCALE, SPRITE_SCALE));
 	board_sprite.setScale(sf::Vector2f(SPRITE_SCALE, SPRITE_SCALE));
 	tet_sprite.setScale(sf::Vector2f(SPRITE_SCALE, SPRITE_SCALE));
+
+	float block_proj_scale = 0.9f;
+	block_proj_sprite.setScale(sf::Vector2f(SPRITE_SCALE, SPRITE_SCALE) * block_proj_scale);
 
 	game_window_sprite.setTexture(game_window_texture);
 	board_sprite.setTexture(game_window_texture);
 	tet_sprite.setTexture(game_window_texture);
 
+	block_proj_sprite.setTexture(block_proj_texture);
+	block_proj_sprite.setColor(sf::Color::Black);
 
-	//uint16_t* representations[5];
 	shapes[0] = shape_S;
 	shapes[1] = shape_L;
 	shapes[2] = shape_I;
@@ -58,8 +70,13 @@ int main()
 	timer = 0;
 	paused = false;
 
+	const int pixels_per_block = WINDOW_WIDTH / BOARD_WIDTH;
+	const int pixel_offset = pixels_per_block * (1.0f - block_proj_scale) / 2.0f;
+
 	Tetromino current_tet;
 	SpawnNewTet(current_tet);
+
+	sf::Vector2i drop_proj_pixels[4];
 
 	// Initialize images
 	for (size_t y = 0; y < BOARD_HEIGHT; y++)
@@ -74,6 +91,30 @@ int main()
 		}
 	}
 
+	Update(current_tet, board, board_image, drop_proj_pixels);
+	DropReprojection(current_tet, board, drop_proj_pixels);
+
+	DrawTet(current_tet, tet_image, drop_proj_pixels);
+
+	tetris_window.clear();
+	
+	board_texture.update(board_image);
+	tet_texture.update(tet_image);
+
+	board_sprite.setTexture(board_texture);
+	tet_sprite.setTexture(tet_texture);
+
+	tetris_window.draw(board_sprite);
+	tetris_window.draw(tet_sprite);
+
+	for (size_t i = 0; i < 4; i++)
+	{
+		block_proj_sprite.setPosition(drop_proj_pixels[i].x * pixels_per_block + pixel_offset, drop_proj_pixels[i].y * pixels_per_block + pixel_offset);
+		tetris_window.draw(block_proj_sprite);
+	}
+
+	tetris_window.display();
+
 	// Application loop
 	while (tetris_window.isOpen())
 	{
@@ -86,52 +127,69 @@ int main()
 		// Event handling
 		while (tetris_window.pollEvent(event))
 		{
-			HandleInputEvent(tetris_window, event, current_tet, board, board_image);
+			if (event.type != sf::Event::MouseMoved)
+			{
+				HandleInputEvent(tetris_window, event, current_tet, board, board_image, drop_proj_pixels);
+
+				if (!paused)
+				{
+					DrawTet(current_tet, tet_image, drop_proj_pixels);
+
+					tetris_window.clear();
+
+					board_texture.update(board_image);
+					tet_texture.update(tet_image);
+
+					board_sprite.setTexture(board_texture);
+					tet_sprite.setTexture(tet_texture);
+
+					tetris_window.draw(board_sprite);
+					tetris_window.draw(tet_sprite);
+
+					// Draw projection pixel masks
+					for (size_t i = 0; i < 4; i++)
+					{
+						if (drop_proj_pixels[i] != sf::Vector2i(0, 0))
+						{
+							block_proj_sprite.setPosition(drop_proj_pixels[i].x * pixels_per_block + pixel_offset, drop_proj_pixels[i].y * pixels_per_block + pixel_offset);
+							tetris_window.draw(block_proj_sprite);
+						}
+					}
+
+					tetris_window.display();
+				}
+			}
 		}
 
 		// Update
 		if (timer > update_interval && !paused)
 		{
-			Update(current_tet, board, board_image);
-		}
+			Update(current_tet, board, board_image, drop_proj_pixels);
 
-		// Draw currently handled tetromino
-		for (size_t y = 0; y < BOARD_HEIGHT; y++)
-		{
-			for (size_t x = 0; x < BOARD_WIDTH; x++)
+			DrawTet(current_tet, tet_image, drop_proj_pixels);
+
+			tetris_window.clear();
+
+			board_texture.update(board_image);
+			tet_texture.update(tet_image);
+
+			board_sprite.setTexture(board_texture);
+			tet_sprite.setTexture(tet_texture);
+
+			tetris_window.draw(board_sprite);
+			tetris_window.draw(tet_sprite);
+
+			for (size_t i = 0; i < 4; i++)
 			{
-				if (y >= current_tet.y && y < current_tet.y + 4)
+				if (drop_proj_pixels[i] != sf::Vector2i(0, 0))
 				{
-					if (current_tet.shape_current[(y - current_tet.y)] & (1 << (BOARD_WIDTH - x + 1)))
-					{
-						tet_image.setPixel(x, y, current_tet.color);
-					}
-					else
-					{
-						tet_image.setPixel(x, y, sf::Color::Transparent);
-					}
-				}
-				else
-				{
-					tet_image.setPixel(x, y, sf::Color::Transparent);
+					block_proj_sprite.setPosition(drop_proj_pixels[i].x * pixels_per_block + pixel_offset, drop_proj_pixels[i].y * pixels_per_block + pixel_offset);
+					tetris_window.draw(block_proj_sprite);
 				}
 			}
+
+			tetris_window.display();
 		}
-
-		//game_window_texture.update(game_window_image);
-		board_texture.update(board_image);
-		tet_texture.update(tet_image);
-
-		//game_window_sprite.setTexture(game_window_texture);
-		board_sprite.setTexture(board_texture);
-		tet_sprite.setTexture(tet_texture);
-
-		// Draw
-		tetris_window.clear();
-		//tetris_window.draw(game_window_sprite);
-		tetris_window.draw(board_sprite);
-		tetris_window.draw(tet_sprite);
-		tetris_window.display();
 	}
 
 	return 0;

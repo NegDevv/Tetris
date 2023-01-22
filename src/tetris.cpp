@@ -205,7 +205,6 @@ bool CollisionCheck(Tetromino& tet, uint16_t* board, MoveDir dir, uint16_t rot =
 {
 	size_t y = 0;
 	int offset = (int)tet.x - 6;
-	//std::cout << "offset:" << offset << std::endl;
 
 	for (size_t i = 0; i < 4; i++, y++)
 	{
@@ -214,21 +213,21 @@ bool CollisionCheck(Tetromino& tet, uint16_t* board, MoveDir dir, uint16_t rot =
 		case LEFT:
 			if ((tet.shape_current[i] << 1) & board[tet.y + y])
 			{
-				std::cout << "Collision when moving to the left!\n";
+				//std::cout << "Collision when moving to the left!\n";
 				return true;
 			}
 			break;
 		case RIGHT:
 			if ((tet.shape_current[i] >> 1) & board[tet.y + y])
 			{
-				std::cout << "Collision when moving to the right!\n";
+				//std::cout << "Collision when moving to the right!\n";
 				return true;
 			}
 			break;
 		case DOWN:
 			if ((tet.shape_current[i]) & board[tet.y + y + 1])
 			{
-				std::cout << "Collision when moving down!\n";
+				//std::cout << "Collision when moving down!\n";
 				return true;
 			}
 			break;
@@ -261,7 +260,7 @@ bool CollisionCheck(Tetromino& tet, uint16_t* board, MoveDir dir, uint16_t rot =
 			{
 				if ((rot_rep[i] >> offset) & board[tet.y + y])
 				{
-					std::cout << "Collision when rotating!\n";
+					//std::cout << "Collision when rotating!\n";
 					return true;
 				}
 			}
@@ -269,7 +268,7 @@ bool CollisionCheck(Tetromino& tet, uint16_t* board, MoveDir dir, uint16_t rot =
 			{
 				if ((rot_rep[i] << abs(offset)) & board[tet.y + y])
 				{
-					std::cout << "Collision when rotating!\n";
+					//std::cout << "Collision when rotating!\n";
 					return true;
 				}
 			}
@@ -342,13 +341,14 @@ void ResetBoard(uint16_t* board, sf::Image& board_image)
 	std::cout << "Board Reset!\n";
 }
 
-void GameOver(Tetromino& tet, uint16_t* board, sf::Image& board_image)
+void GameOver(Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2i* drop_proj_pixels)
 {
 	std::cout << "\nGame Over!\n\n";
 	ResetBoard(board, board_image);
 	timer = 0;
 	std::cout << "New Game!\n";
 	SpawnNewTet(tet);
+	DropReprojection(tet, board, drop_proj_pixels);
 }
 
 void MergeTetToBoard(Tetromino& tet, uint16_t* board, sf::Image& board_image)
@@ -360,13 +360,12 @@ void MergeTetToBoard(Tetromino& tet, uint16_t* board, sf::Image& board_image)
 
 	for (size_t y = 0; y < BOARD_HEIGHT; y++)
 	{
-		for (size_t x = 0; x < BOARD_WIDTH; x++) // Should we loop from 0 - 16 instead?
+		for (size_t x = 0; x < BOARD_WIDTH; x++)
 		{
 			if (y >= tet.y && y < tet.y + 4)
 			{
 				if (tet.shape_current[(y - tet.y)] & (1 << (BOARD_WIDTH - x + 1)))
 				{
-					//game_window_image.setPixel(x, y, current_tet.color);
 					board_image.setPixel(x, y, tet.color);
 				}
 			}
@@ -384,7 +383,38 @@ void ClearRow(uint16_t y, uint16_t* board, sf::Image& board_image)
 	std::cout << "Row " << y << " cleared!\n";
 }
 
-void HandleKeyPressed(sf::RenderWindow& target_window, sf::Keyboard::Key key, Tetromino& tet, uint16_t* board, sf::Image& board_image)
+void DropReprojection(Tetromino& tet, uint16_t* board, sf::Vector2i* drop_proj_pixels)
+{
+	uint16_t org_y = tet.y;
+	bool collision = false;
+	collision = CollisionCheck(tet, board, DOWN);
+	while (!collision)
+	{
+		tet.y += 1;
+
+		collision = CollisionCheck(tet, board, DOWN);
+	}
+
+	int i = 0;
+	for (size_t y = 0; y < BOARD_HEIGHT; y++)
+	{
+		for (size_t x = 0; x < BOARD_WIDTH; x++)
+		{
+			if (y >= tet.y && y < tet.y + 4)
+			{
+				if (tet.shape_current[(y - tet.y)] & (1 << (BOARD_WIDTH - x + 1)))
+				{
+					drop_proj_pixels[i] = sf::Vector2i(x, y);
+					i += 1;
+				}
+			}
+		}
+	}
+
+	tet.y = org_y;
+}
+
+void HandleKeyPressed(sf::RenderWindow& target_window, sf::Keyboard::Key key, Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2i* drop_proj_pixels)
 {
 	using namespace sf;
 
@@ -403,6 +433,7 @@ void HandleKeyPressed(sf::RenderWindow& target_window, sf::Keyboard::Key key, Te
 	if (key == Keyboard::BackSpace)
 	{
 		ResetBoard(board, board_image);
+		DropReprojection(tet, board, drop_proj_pixels);
 	}
 
 	if (!paused)
@@ -456,7 +487,6 @@ void HandleKeyPressed(sf::RenderWindow& target_window, sf::Keyboard::Key key, Te
 
 			bool collision = CollisionCheck(tet, board, ROTATE, temp_rot);
 			int offset = (int)tet.x - 6;
-			//std::cout << "offset:" << offset << std::endl;
 			if (!collision)
 			{
 				tet.rot = temp_rot;
@@ -475,7 +505,6 @@ void HandleKeyPressed(sf::RenderWindow& target_window, sf::Keyboard::Key key, Te
 			{
 				tet.y += 1;
 				timer = 0;
-				// Restart timer?
 			}
 			else
 			{
@@ -499,23 +528,23 @@ void HandleKeyPressed(sf::RenderWindow& target_window, sf::Keyboard::Key key, Te
 
 			if (collision)
 			{
-				std::cout << "Collision when dropping!\n";
 				MergeTetToBoard(tet, board, board_image);
 
 				SpawnNewTet(tet);
 			}
 		}
+		DropReprojection(tet, board, drop_proj_pixels);
 	}
 }
 
-void HandleInputEvent(sf::RenderWindow& target_window, sf::Event& event, Tetromino& tet, uint16_t* board, sf::Image& board_image)
+void HandleInputEvent(sf::RenderWindow& target_window, sf::Event& event, Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2i* drop_proj_pixels)
 {
 	using namespace sf;
 
 	if (event.type == Event::KeyPressed)
 	{
 		Keyboard::Key key = event.key.code;
-		HandleKeyPressed(target_window, key, tet, board, board_image);
+		HandleKeyPressed(target_window, key, tet, board, board_image, drop_proj_pixels);
 	}
 	else if (event.type == Event::Closed)
 	{
@@ -532,7 +561,7 @@ void CopyPixelRow(sf::Image& board_image, uint16_t src_y, uint16_t dest_y)
 	}
 }
 
-void Update(Tetromino& tet, uint16_t* board, sf::Image& board_image)
+void Update(Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2i* drop_proj_pixels)
 {
 	// Check for full rows
 	for (size_t y = BOARD_HEIGHT - 2; y > 1; y--)
@@ -546,7 +575,6 @@ void Update(Tetromino& tet, uint16_t* board, sf::Image& board_image)
 	// Check for hanging rows NOTE: Need to copy row pixels for drawing
 	for (size_t y = BOARD_HEIGHT - 2; y > 0; y--)
 	{
-		//std::cout << "Checking row " << y << std::endl;
 		uint16_t* row_below = &board[y + 1];
 		if (board[y] != 0b0010000000000100 && *row_below == 0b0010000000000100)
 		{
@@ -574,10 +602,11 @@ void Update(Tetromino& tet, uint16_t* board, sf::Image& board_image)
 			MergeTetToBoard(tet, board, board_image);
 
 			SpawnNewTet(tet);
+			
 		}
 		else
 		{
-			GameOver(tet, board, board_image);
+			GameOver(tet, board, board_image, drop_proj_pixels);
 			return;
 		}
 	}
@@ -587,7 +616,60 @@ void Update(Tetromino& tet, uint16_t* board, sf::Image& board_image)
 		std::cout << "Move down\n";
 	}
 
+	DropReprojection(tet, board, drop_proj_pixels);
+
 	std::cout << "Y:" << tet.y << std::endl;
 
 	timer = 0;
+}
+
+void DrawTet(Tetromino& tet, sf::Image& tet_image, sf::Vector2i* drop_proj_pixels)
+{
+	sf::Vector2i masked_proj_pixels[4];
+	int i = 0;
+	// Draw currently handled tetromino
+	for (size_t y = 0; y < BOARD_HEIGHT; y++)
+	{
+		for (size_t x = 0; x < BOARD_WIDTH; x++)
+		{
+			if (y >= tet.y && y < tet.y + 4)
+			{
+				if (tet.shape_current[(y - tet.y)] & (1 << (BOARD_WIDTH - x + 1)))
+				{
+					tet_image.setPixel(x, y, tet.color);
+					masked_proj_pixels[i] = sf::Vector2i(x, y);
+					i += 1;
+				}
+				else
+				{
+					tet_image.setPixel(x, y, sf::Color::Transparent);
+				}
+			}
+			else
+			{
+				tet_image.setPixel(x, y, sf::Color::Transparent);
+			}
+
+		}
+	}
+
+	for (size_t i = 0; i < 4; i++)
+	{
+		if (drop_proj_pixels[i] != sf::Vector2i(0, 0))
+		{
+			tet_image.setPixel(drop_proj_pixels[i].x, drop_proj_pixels[i].y, tet.color);
+		}
+	}
+
+	// Mark masked projection pixels
+	for (size_t i = 0; i < 4; i++)
+	{
+		for (size_t j = 0; j < 4; j++)
+		{
+			if (drop_proj_pixels[i] == masked_proj_pixels[j])
+			{
+				drop_proj_pixels[i] = sf::Vector2i(0, 0);
+			}
+		}
+	}
 }
