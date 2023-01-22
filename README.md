@@ -6,7 +6,7 @@ Classic Tetris clone made with C++ and SFML.
 
  Uses bit patterns for board and tetromino representation
 
-Statically linked Windows executable available in the [bin](bin/) folder
+**Statically linked Windows executable available in the [bin](bin/) folder**
 
 ## Input
 
