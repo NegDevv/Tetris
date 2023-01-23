@@ -83,7 +83,7 @@ int main()
 	{
 		for (size_t x = 0; x < BOARD_WIDTH; x++)
 		{
-			if (board[y] & (1 << (BOARD_WIDTH - x) + 1))
+			if (board[y] & (1 << (BOARD_WIDTH - x + 1)))
 			{
 				board_image.setPixel(x, y, block_colors[Grey]);
 			}

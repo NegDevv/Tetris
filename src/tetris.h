@@ -63,7 +63,7 @@ void SetTetRot(Tetromino& tet, int offset, uint16_t rot);
 
 void ResetBoard(uint16_t* board, sf::Image& board_image);
 
-void GameOver(Tetromino& tet, uint16_t* board, sf::Image& board_image);
+void GameOver(Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2i* drop_proj_pixels);
 
 void MergeTetToBoard(Tetromino& tet, uint16_t* board, sf::Image& board_image);
 
