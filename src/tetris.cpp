@@ -805,6 +805,8 @@ void LoadAudio()
 	{
 		std::cout << "Couldnt load sound file!\n";
 	}
+
+	sf::Listener::setGlobalVolume(20.0f);
 }
 
 void Init()
