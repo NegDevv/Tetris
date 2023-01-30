@@ -3,15 +3,12 @@
 #include "tetris.h"
 #include <iostream>
 
-#define WINDOW_WIDTH 360
-#define WINDOW_HEIGHT 660
-
 
 int main()
 {
 	float SPRITE_SCALE = (float)WINDOW_WIDTH / BOARD_WIDTH;
 
-	sf::RenderWindow tetris_window(sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Tetris");
+	sf::RenderWindow tetris_window(sf::VideoMode(WINDOW_WIDTH + WINDOW_WIDTH / 2, WINDOW_HEIGHT), "Tetris");
 
 	sf::Image game_window_image;
 	sf::Image board_image;
@@ -52,23 +49,21 @@ int main()
 	block_proj_sprite.setScale(sf::Vector2f(SPRITE_SCALE, SPRITE_SCALE) * block_proj_scale);
 
 	game_window_sprite.setTexture(game_window_texture);
-	board_sprite.setTexture(game_window_texture);
+	board_sprite.setTexture(board_texture);
 	tet_sprite.setTexture(game_window_texture);
 
 	block_proj_sprite.setTexture(block_proj_texture);
 	block_proj_sprite.setColor(sf::Color::Black);
 
-	shapes[0] = shape_S;
-	shapes[1] = shape_L;
-	shapes[2] = shape_I;
-	shapes[3] = shape_T;
-	shapes[4] = shape_O;
+	Init();
 
 	sf::Clock clock;
 	int tick_rate = 1;
 	float update_interval = 1.0f / tick_rate;
 	timer = 0;
 	paused = false;
+	score = 0;
+	level = 1;
 
 	const int pixels_per_block = WINDOW_WIDTH / BOARD_WIDTH;
 	const int pixel_offset = pixels_per_block * (1.0f - block_proj_scale) / 2.0f;
@@ -106,6 +101,10 @@ int main()
 
 	tetris_window.draw(board_sprite);
 	tetris_window.draw(tet_sprite);
+
+	tetris_window.draw(score_text);
+	tetris_window.draw(level_text);
+	tetris_window.draw(lines_text);
 
 	for (size_t i = 0; i < 4; i++)
 	{
@@ -156,6 +155,10 @@ int main()
 						}
 					}
 
+					tetris_window.draw(score_text);
+					tetris_window.draw(level_text);
+					tetris_window.draw(lines_text);
+
 					tetris_window.display();
 				}
 			}
@@ -187,6 +190,10 @@ int main()
 					tetris_window.draw(block_proj_sprite);
 				}
 			}
+
+			tetris_window.draw(score_text);
+			tetris_window.draw(level_text);
+			tetris_window.draw(lines_text);
 
 			tetris_window.display();
 		}

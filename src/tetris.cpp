@@ -1,6 +1,9 @@
 #include <iostream>
 #include "tetris.h"
 
+const int WINDOW_WIDTH = 360;
+const int WINDOW_HEIGHT = 660;
+
 // Tetris dimensions: 12 x 22 (including borders)
 const int BOARD_WIDTH = 12;
 const int BOARD_HEIGHT = 22;
@@ -23,8 +26,21 @@ const sf::Color block_colors[]
 };
 
 const uint16_t* shapes[5];
-bool paused;
-float timer;
+bool paused = false;
+float timer = 0;
+uint32_t score = 0;
+uint16_t level = 1;
+uint16_t lines = 0;
+
+sf::SoundBuffer sound_buffers[8];
+sf::Sound sound_effect;
+sf::Sound sound_effect_move;
+
+sf::Font retro_font;
+sf::Text score_text;
+sf::Text level_text;
+sf::Text lines_text;
+
 
 #pragma region Shapes
 
@@ -287,7 +303,7 @@ void SpawnNewTet(Tetromino& tet)
 	std::copy(shapes[shape_index], shapes[shape_index] + 4, tet.shape_current);
 	std::copy(shapes[shape_index], shapes[shape_index] + 16, tet.shape_rotations);
 	tet.x = 6;
-	tet.y = 1;
+	tet.y = 0;
 	tet.rot = 0;
 	tet.color = block_colors[rand() % (COUNT - 1)];
 	std::cout << "New Tetromino!\n";
@@ -344,12 +360,32 @@ void ResetBoard(uint16_t* board, sf::Image& board_image)
 void GameOver(Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2i* drop_proj_pixels)
 {
 	std::cout << "\nGame Over!\n\n";
+	sound_effect.setBuffer(sound_buffers[(int)Sound::game_over]);
+	sound_effect.play();
+	std::cout << "Score: " << score << std::endl;
+
+	GameStart(tet, board, board_image, drop_proj_pixels);
+}
+
+void GameStart(Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2i* drop_proj_pixels)
+{
 	ResetBoard(board, board_image);
 	timer = 0;
+	score = 0;
+	level = 1;
+	lines = 0;
+	paused = false;
+	/*sound_effect.setBuffer(sound_buffers[new_game]);
+	sound_effect.play();*/
+
 	std::cout << "New Game!\n";
+	score_text.setString("SCORE\n" + std::to_string(score));
+	level_text.setString("LEVEL\n" + std::to_string(level));
+	lines_text.setString("LINES\n" + std::to_string(lines));
 	SpawnNewTet(tet);
 	DropReprojection(tet, board, drop_proj_pixels);
 }
+
 
 void MergeTetToBoard(Tetromino& tet, uint16_t* board, sf::Image& board_image)
 {
@@ -416,21 +452,19 @@ void DropReprojection(Tetromino& tet, uint16_t* board, sf::Vector2i* drop_proj_p
 
 void HandleKeyPressed(sf::RenderWindow& target_window, sf::Keyboard::Key key, Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2i* drop_proj_pixels)
 {
-	using namespace sf;
-
-	if (key == Keyboard::Escape)
+	if (key == sf::Keyboard::Escape)
 	{
 		target_window.close();
 		std::cout << "Window closed!\n";
 	}
 
-	if (key == Keyboard::Enter)
+	if (key == sf::Keyboard::Enter)
 	{
 		paused = !paused;
 		std::cout << "Paused!\n";
 	}
 
-	if (key == Keyboard::BackSpace)
+	if (key == sf::Keyboard::BackSpace)
 	{
 		ResetBoard(board, board_image);
 		DropReprojection(tet, board, drop_proj_pixels);
@@ -438,7 +472,7 @@ void HandleKeyPressed(sf::RenderWindow& target_window, sf::Keyboard::Key key, Te
 
 	if (!paused)
 	{
-		if (key == Keyboard::Right)
+		if (key == sf::Keyboard::Right)
 		{
 			std::cout << "Move Right!\n";
 
@@ -451,11 +485,14 @@ void HandleKeyPressed(sf::RenderWindow& target_window, sf::Keyboard::Key key, Te
 					tet.shape_current[i] >>= 1;
 				}
 				tet.x += 1;
+
+				sound_effect_move.setBuffer(sound_buffers[(int)Sound::move]);
+				sound_effect_move.play();
 			}
-			std::cout << "X: " << tet.x << std::endl;;
+			std::cout << "X: " << tet.x << std::endl;
 		}
 
-		if (key == Keyboard::Left)
+		if (key == sf::Keyboard::Left)
 		{
 			std::cout << "Move Left!\n";
 			bool collision = CollisionCheck(tet, board, LEFT);
@@ -467,11 +504,14 @@ void HandleKeyPressed(sf::RenderWindow& target_window, sf::Keyboard::Key key, Te
 					tet.shape_current[i] <<= 1;
 				}
 				tet.x -= 1;
+
+				sound_effect_move.setBuffer(sound_buffers[(int)Sound::move]);
+				sound_effect_move.play();
 			}
 			std::cout << "X: " << tet.x << std::endl;
 		}
 
-		if (key == Keyboard::Up)
+		if (key == sf::Keyboard::Up)
 		{
 			std::cout << "Rotate!\n";
 
@@ -491,12 +531,15 @@ void HandleKeyPressed(sf::RenderWindow& target_window, sf::Keyboard::Key key, Te
 			{
 				tet.rot = temp_rot;
 				SetTetRot(tet, offset, tet.rot);
+
+				sound_effect_move.setBuffer(sound_buffers[(int)Sound::rotate]);
+				sound_effect_move.play();
 			}
 			std::cout << "Current rotation " << tet.rot << std::endl;
 		}
 
 
-		if (key == Keyboard::Down)
+		if (key == sf::Keyboard::Down)
 		{
 			std::cout << "Move Down!\n";
 			bool collision = CollisionCheck(tet, board, DOWN);
@@ -510,15 +553,20 @@ void HandleKeyPressed(sf::RenderWindow& target_window, sf::Keyboard::Key key, Te
 			{
 				MergeTetToBoard(tet, board, board_image);
 
+				sound_effect_move.setBuffer(sound_buffers[(int)Sound::place]);
+				sound_effect_move.play();
+
 				SpawnNewTet(tet);
 			}
 		}
 
-		if (key == Keyboard::Space)
+		if (key == sf::Keyboard::Space)
 		{
 			std::cout << "Drop!\n";
 			bool collision = false;
 			collision = CollisionCheck(tet, board, DOWN);
+			uint16_t start_y = tet.y;
+
 			while (!collision)
 			{
 				tet.y += 1;
@@ -530,8 +578,14 @@ void HandleKeyPressed(sf::RenderWindow& target_window, sf::Keyboard::Key key, Te
 			{
 				MergeTetToBoard(tet, board, board_image);
 
+				score += (tet.y - start_y);
+				score_text.setString("SCORE\n" + std::to_string(score));
+
 				SpawnNewTet(tet);
 			}
+
+			sound_effect_move.setBuffer(sound_buffers[(int)Sound::place]);
+			sound_effect_move.play();
 		}
 		DropReprojection(tet, board, drop_proj_pixels);
 	}
@@ -563,15 +617,47 @@ void CopyPixelRow(sf::Image& board_image, uint16_t src_y, uint16_t dest_y)
 
 void Update(Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2i* drop_proj_pixels)
 {
+	bool line_cleared = false;
+	uint16_t lines_cleared = 0;
 	// Check for full rows
 	for (size_t y = BOARD_HEIGHT - 2; y > 1; y--)
 	{
 		if (board[y] == 0b0011111111111100) // 16380
 		{
 			ClearRow(y, board, board_image);
+			line_cleared = true;
+			lines_cleared += 1;
 		}
 	}
 
+	if (line_cleared)
+	{
+		if (lines_cleared > 3)
+		{
+			sound_effect.setBuffer(sound_buffers[(int)Sound::tetris]);
+			score += 1200 * (level + 1);
+		}
+		else if(lines_cleared == 3)
+		{
+			sound_effect.setBuffer(sound_buffers[(int)Sound::line]);
+			score += 300 * (level + 1);
+		}
+		else if (lines_cleared == 2)
+		{
+			sound_effect.setBuffer(sound_buffers[(int)Sound::line]);
+			score += 100 * (level + 1);
+		}
+		else if (lines_cleared == 1)
+		{
+			sound_effect.setBuffer(sound_buffers[(int)Sound::line]);
+			score += 40 * (level + 1);
+		}
+
+		lines += lines_cleared;
+		sound_effect.play();
+	}
+
+	
 	// Check for hanging rows NOTE: Need to copy row pixels for drawing
 	for (size_t y = BOARD_HEIGHT - 2; y > 0; y--)
 	{
@@ -597,18 +683,20 @@ void Update(Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2
 
 	if (collision)
 	{
-		if (tet.y != 1)
+		if (tet.y != 0)
 		{
 			MergeTetToBoard(tet, board, board_image);
 
 			SpawnNewTet(tet);
-			
 		}
 		else
 		{
 			GameOver(tet, board, board_image, drop_proj_pixels);
 			return;
 		}
+
+		sound_effect.setBuffer(sound_buffers[(int)Sound::place]);
+		sound_effect.play();
 	}
 	else
 	{
@@ -619,7 +707,9 @@ void Update(Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2
 	DropReprojection(tet, board, drop_proj_pixels);
 
 	std::cout << "Y:" << tet.y << std::endl;
-
+	std::cout << "Score: " << score << std::endl;
+	score_text.setString("SCORE\n" + std::to_string(score));
+	lines_text.setString("LINES\n" + std::to_string(lines));
 	timer = 0;
 }
 
@@ -672,4 +762,85 @@ void DrawTet(Tetromino& tet, sf::Image& tet_image, sf::Vector2i* drop_proj_pixel
 			}
 		}
 	}
+}
+
+void LoadAudio()
+{
+	if (!sound_buffers[0].loadFromFile("resources/audio/soundfx/tetris_game_over.wav"))
+	{
+		std::cout << "Couldnt load sound file!\n";
+	}
+
+	if (!sound_buffers[1].loadFromFile("resources/audio/soundfx/tetris_line_clear.wav"))
+	{
+		std::cout << "Couldnt load sound file!\n";
+	}
+
+	if (!sound_buffers[2].loadFromFile("resources/audio/soundfx/tetris_move.wav"))
+	{
+		std::cout << "Couldnt load sound file!\n";
+	}
+
+	if (!sound_buffers[3].loadFromFile("resources/audio/soundfx/tetris_new_game.wav"))
+	{
+		std::cout << "Couldnt load sound file!\n";
+	}
+
+	if (!sound_buffers[4].loadFromFile("resources/audio/soundfx/tetris_next_level.wav"))
+	{
+		std::cout << "Couldnt load sound file!\n";
+	}
+
+	if (!sound_buffers[5].loadFromFile("resources/audio/soundfx/tetris_place.wav"))
+	{
+		std::cout << "Couldnt load sound file!\n";
+	}
+
+	if (!sound_buffers[6].loadFromFile("resources/audio/soundfx/tetris_rotate.wav"))
+	{
+		std::cout << "Couldnt load sound file!\n";
+	}
+
+	if (!sound_buffers[7].loadFromFile("resources/audio/soundfx/tetris_tetris.wav"))
+	{
+		std::cout << "Couldnt load sound file!\n";
+	}
+}
+
+void Init()
+{
+	shapes[0] = shape_S;
+	shapes[1] = shape_L;
+	shapes[2] = shape_I;
+	shapes[3] = shape_T;
+	shapes[4] = shape_O;
+
+	LoadAudio();
+
+	if (!retro_font.loadFromFile("resources/font/retro_gaming.ttf"))
+	{
+		std::cout << "Couldn't load font!\n";
+	}
+
+	uint32_t char_size = 35 * (WINDOW_WIDTH / 360.0f);
+	std::cout << "Character size: " << char_size << std::endl;
+	score_text.setFont(retro_font);
+	score_text.setCharacterSize(char_size);
+	score_text.setFillColor(sf::Color::White);
+	score_text.setString("SCORE\n" + std::to_string(score));
+
+	level_text.setFont(retro_font);
+	level_text.setCharacterSize(char_size);
+	level_text.setFillColor(sf::Color::White);
+	level_text.setString("LEVEL \n" + std::to_string(level));
+
+	lines_text.setFont(retro_font);
+	lines_text.setCharacterSize(char_size);
+	lines_text.setFillColor(sf::Color::White);
+	lines_text.setString("LINES \n" + std::to_string(lines));
+
+	score_text.setPosition(WINDOW_WIDTH, 0);
+	level_text.setPosition(WINDOW_WIDTH, score_text.getGlobalBounds().top + score_text.getGlobalBounds().height * 1.5f);
+	lines_text.setPosition(WINDOW_WIDTH, level_text.getGlobalBounds().top + level_text.getGlobalBounds().height * 1.5f);
+
 }

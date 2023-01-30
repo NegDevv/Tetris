@@ -2,9 +2,13 @@
 #include <SFML/Graphics/Image.hpp>
 #include <SFML/Window/event.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
+#include <SFML/Graphics/Font.hpp>
+#include <SFML/Graphics/Text.hpp>
+#include <SFML/Audio.hpp>
 
+extern const int WINDOW_WIDTH;
+extern const int WINDOW_HEIGHT;
 
-// Tetris dimensions: 12 x 22 (including borders)
 extern const int BOARD_WIDTH;
 extern const int BOARD_HEIGHT;
 
@@ -18,11 +22,13 @@ extern const sf::Color block_colors[];
 
 enum MoveDir { LEFT, RIGHT, DOWN, ROTATE };
 
+enum class Sound { game_over, line, move, new_game, level, place, rotate, tetris};
+
 struct Tetromino
 {
 	uint16_t shape_current[4];
 	uint16_t shape_rotations[16];
-	uint16_t y = 1; // Top row
+	uint16_t y = 0; // Top row
 	uint16_t x = 6; // Shifted to right 
 	uint16_t rot = 0;
 	sf::Color color = sf::Color::Red;
@@ -31,7 +37,19 @@ struct Tetromino
 extern const uint16_t* shapes[5];
 extern bool paused;
 extern float timer;
+extern uint32_t score;
+extern uint16_t level;
+extern uint16_t lines;
 
+extern sf::SoundBuffer sound_buffers[8];
+extern sf::Sound sound_effect;
+extern sf::Sound sound_effect_move;
+
+extern sf::Font retro_font;
+
+extern sf::Text score_text;
+extern sf::Text level_text;
+extern sf::Text lines_text;
 
 #pragma region Shapes
 
@@ -65,6 +83,8 @@ void ResetBoard(uint16_t* board, sf::Image& board_image);
 
 void GameOver(Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2i* drop_proj_pixels);
 
+void GameStart(Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2i* drop_proj_pixels);
+
 void MergeTetToBoard(Tetromino& tet, uint16_t* board, sf::Image& board_image);
 
 void ClearRow(uint16_t y, uint16_t* board, sf::Image& board_image);
@@ -80,3 +100,7 @@ void CopyPixelRow(sf::Image& board_image, uint16_t src_y, uint16_t dest_y);
 void Update(Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2i* drop_proj_pixels);
 
 void DrawTet(Tetromino& tet, sf::Image& tet_image, sf::Vector2i* drop_proj_pixels);
+
+void LoadAudio();
+
+void Init();
