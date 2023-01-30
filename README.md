@@ -8,6 +8,8 @@ Classic Tetris clone made with C++ and SFML.
 
 **Statically linked Windows executable available in the [bin](bin/) folder**
 
+The **resources** folder needs to be in the same folder where Tetris.exe is run
+
 ## Input
 
 |Command|Action|
