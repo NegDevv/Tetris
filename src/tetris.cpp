@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include "tetris.h"
 
 const int WINDOW_WIDTH = 360;
@@ -41,7 +42,7 @@ sf::Text score_text;
 sf::Text level_text;
 sf::Text lines_text;
 sf::Text pause_text;
-
+sf::Text top_score_text;
 
 #pragma region Shapes
 
@@ -365,8 +366,81 @@ void GameOver(Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vecto
 	sound_effect.setBuffer(sound_buffers[(int)Sound::game_over]);
 	sound_effect.play();
 	std::cout << "Score: " << score << std::endl;
+	SaveScore(score);
+	top_score_text.setString("TOP\n" + std::to_string(GetHighestScore()));
 
 	GameStart(tet, board, board_image, drop_proj_pixels);
+}
+
+void SaveScore(uint32_t score)
+{
+	std::fstream hs_file;
+	const std::string file_name = "highscores.txt";
+	hs_file.open(file_name, std::fstream::in);
+	if (hs_file.fail())
+	{
+		std::cout << "Couldn't find existing \"highscores.txt\" file\n";
+		std::cout << "Created a new \"highscores.txt\" file\n";
+	}
+	hs_file.close();
+
+	hs_file.open(file_name, std::fstream::app);
+
+	if (hs_file.is_open())
+	{
+		hs_file << std::to_string(score) << std::endl;
+		std::cout << "Added score (" << score << ") to " << file_name << std::endl;
+	}
+	else
+	{
+		std::cout << "Couldn't open " << file_name << " for writing\n";
+	}
+
+	hs_file.close();
+}
+
+uint32_t GetHighestScore()
+{
+	std::ifstream hs_file;
+	const std::string file_name = "highscores.txt";
+	uint32_t highscore = 0;
+
+	hs_file.open(file_name);
+	if (hs_file.is_open())
+	{
+		uint32_t line_count = 0;
+		std::string line = "";
+
+		while (std::getline(hs_file, line))
+		{
+			line_count += 1;
+		}
+
+		uint32_t* highscores = new uint32_t[line_count];
+
+		hs_file.clear();  // Clear stream status bit. In this case eof
+		hs_file.seekg(0); // Go back to the beginning of the file
+
+
+		line_count = 0;
+		while (std::getline(hs_file, line))
+		{
+			highscores[line_count++] = (uint32_t)std::stoi(line);
+		}
+
+		std::cout << line_count << " highscore entries found in \"highscores.txt\"" << std::endl;
+
+		hs_file.close();
+		highscore =  *std::max_element(highscores, highscores + line_count);
+		delete[] highscores;
+	}
+	else
+	{
+		std::cout << "Couldn't find \"highscores.txt\" file\n";
+	}
+
+	std::cout << "Highscore: " << highscore << std::endl << std::endl;
+	return highscore;
 }
 
 void GameStart(Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2i* drop_proj_pixels)
@@ -387,7 +461,6 @@ void GameStart(Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vect
 	SpawnNewTet(tet);
 	DropReprojection(tet, board, drop_proj_pixels);
 }
-
 
 void MergeTetToBoard(Tetromino& tet, uint16_t* board, sf::Image& board_image)
 {
@@ -839,7 +912,7 @@ void Init()
 	}
 
 	uint32_t char_size = 35 * (WINDOW_WIDTH / 360.0f);
-	std::cout << "Character size: " << char_size << std::endl;
+	//std::cout << "Character size: " << char_size << std::endl;
 	score_text.setFont(retro_font);
 	score_text.setCharacterSize(char_size);
 	score_text.setFillColor(sf::Color::White);
@@ -860,9 +933,15 @@ void Init()
 	pause_text.setFillColor(sf::Color::White);
 	pause_text.setString("GAME PAUSED\n");
 
+	top_score_text.setFont(retro_font);
+	top_score_text.setCharacterSize(char_size);
+	top_score_text.setFillColor(sf::Color::White);
+	top_score_text.setString("TOP\n" + std::to_string(GetHighestScore()));
+
 
 	score_text.setPosition(WINDOW_WIDTH, 0);
 	level_text.setPosition(WINDOW_WIDTH, score_text.getGlobalBounds().top + score_text.getGlobalBounds().height * 1.5f);
 	lines_text.setPosition(WINDOW_WIDTH, level_text.getGlobalBounds().top + level_text.getGlobalBounds().height * 1.5f);
+	top_score_text.setPosition(WINDOW_WIDTH, lines_text.getGlobalBounds().top + lines_text.getGlobalBounds().height * 1.5f);
 	pause_text.setPosition(WINDOW_WIDTH / 2.0f - pause_text.getGlobalBounds().width / 2.0f, WINDOW_HEIGHT / 2.0f);
 }

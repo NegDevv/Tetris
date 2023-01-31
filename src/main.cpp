@@ -105,6 +105,7 @@ int main()
 	tetris_window.draw(score_text);
 	tetris_window.draw(level_text);
 	tetris_window.draw(lines_text);
+	tetris_window.draw(top_score_text);
 
 	for (size_t i = 0; i < 4; i++)
 	{
@@ -162,6 +163,7 @@ int main()
 				tetris_window.draw(score_text);
 				tetris_window.draw(level_text);
 				tetris_window.draw(lines_text);
+				tetris_window.draw(top_score_text);
 
 				if (paused)
 				{
@@ -202,6 +204,7 @@ int main()
 			tetris_window.draw(score_text);
 			tetris_window.draw(level_text);
 			tetris_window.draw(lines_text);
+			tetris_window.draw(top_score_text);
 
 			tetris_window.display();
 		}

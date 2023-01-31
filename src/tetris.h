@@ -51,6 +51,7 @@ extern sf::Text score_text;
 extern sf::Text level_text;
 extern sf::Text lines_text;
 extern sf::Text pause_text;
+extern sf::Text top_score_text;
 
 #pragma region Shapes
 
@@ -83,6 +84,10 @@ void SetTetRot(Tetromino& tet, int offset, uint16_t rot);
 void ResetBoard(uint16_t* board, sf::Image& board_image);
 
 void GameOver(Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2i* drop_proj_pixels);
+
+void SaveScore(uint32_t score);
+
+uint32_t GetHighestScore();
 
 void GameStart(Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2i* drop_proj_pixels);
 
