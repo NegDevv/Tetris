@@ -34,7 +34,7 @@ struct Tetromino
 	sf::Color color = sf::Color::Red;
 };
 
-extern const uint16_t* shapes[5];
+extern const uint16_t* shapes[7];
 extern bool paused;
 extern float timer;
 extern uint32_t score;
