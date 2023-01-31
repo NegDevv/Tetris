@@ -119,7 +119,12 @@ int main()
 	{
 		float time = clock.getElapsedTime().asSeconds();
 		clock.restart();
-		timer += time;
+
+		if (!paused)
+		{
+			timer += time;
+		}
+		
 
 		sf::Event event;
 
@@ -130,37 +135,40 @@ int main()
 			{
 				HandleInputEvent(tetris_window, event, current_tet, board, board_image, drop_proj_pixels);
 
-				if (!paused)
+
+				DrawTet(current_tet, tet_image, drop_proj_pixels);
+
+				tetris_window.clear();
+
+				board_texture.update(board_image);
+				tet_texture.update(tet_image);
+
+				board_sprite.setTexture(board_texture);
+				tet_sprite.setTexture(tet_texture);
+
+				tetris_window.draw(board_sprite);
+				tetris_window.draw(tet_sprite);
+
+				// Draw projection pixel masks
+				for (size_t i = 0; i < 4; i++)
 				{
-					DrawTet(current_tet, tet_image, drop_proj_pixels);
-
-					tetris_window.clear();
-
-					board_texture.update(board_image);
-					tet_texture.update(tet_image);
-
-					board_sprite.setTexture(board_texture);
-					tet_sprite.setTexture(tet_texture);
-
-					tetris_window.draw(board_sprite);
-					tetris_window.draw(tet_sprite);
-
-					// Draw projection pixel masks
-					for (size_t i = 0; i < 4; i++)
+					if (drop_proj_pixels[i] != sf::Vector2i(0, 0))
 					{
-						if (drop_proj_pixels[i] != sf::Vector2i(0, 0))
-						{
-							block_proj_sprite.setPosition(drop_proj_pixels[i].x * pixels_per_block + pixel_offset, drop_proj_pixels[i].y * pixels_per_block + pixel_offset);
-							tetris_window.draw(block_proj_sprite);
-						}
+						block_proj_sprite.setPosition(drop_proj_pixels[i].x * pixels_per_block + pixel_offset, drop_proj_pixels[i].y * pixels_per_block + pixel_offset);
+						tetris_window.draw(block_proj_sprite);
 					}
-
-					tetris_window.draw(score_text);
-					tetris_window.draw(level_text);
-					tetris_window.draw(lines_text);
-
-					tetris_window.display();
 				}
+
+				tetris_window.draw(score_text);
+				tetris_window.draw(level_text);
+				tetris_window.draw(lines_text);
+
+				if (paused)
+				{
+					tetris_window.draw(pause_text);
+				}
+
+				tetris_window.display();
 			}
 		}
 

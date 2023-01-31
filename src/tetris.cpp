@@ -40,6 +40,7 @@ sf::Font retro_font;
 sf::Text score_text;
 sf::Text level_text;
 sf::Text lines_text;
+sf::Text pause_text;
 
 
 #pragma region Shapes
@@ -306,6 +307,7 @@ void SpawnNewTet(Tetromino& tet)
 	tet.y = 0;
 	tet.rot = 0;
 	tet.color = block_colors[rand() % (COUNT - 1)];
+	timer = 0;
 	std::cout << "New Tetromino!\n";
 }
 
@@ -461,7 +463,7 @@ void HandleKeyPressed(sf::RenderWindow& target_window, sf::Keyboard::Key key, Te
 	if (key == sf::Keyboard::Enter)
 	{
 		paused = !paused;
-		std::cout << "Paused!\n";
+		std::cout << (paused ? "Paused!\n" : "Unpaused!\n");
 	}
 
 	if (key == sf::Keyboard::BackSpace)
@@ -619,6 +621,7 @@ void Update(Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2
 {
 	bool line_cleared = false;
 	uint16_t lines_cleared = 0;
+	bool level_cleared = false;
 	// Check for full rows
 	for (size_t y = BOARD_HEIGHT - 2; y > 1; y--)
 	{
@@ -653,8 +656,17 @@ void Update(Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2
 			score += 40 * (level + 1);
 		}
 
-		lines += lines_cleared;
 		sound_effect.play();
+
+		if (lines < (level * 10) && (lines + lines_cleared ) >= (level * 10))
+		{
+			level += 1;
+			level_text.setString("LEVEL\n" + std::to_string(level));
+			sound_effect.setBuffer(sound_buffers[(int)Sound::next_level]);
+			sound_effect.play();
+		}
+
+		lines += lines_cleared;
 	}
 
 	
@@ -705,6 +717,8 @@ void Update(Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2
 	}
 
 	DropReprojection(tet, board, drop_proj_pixels);
+
+	
 
 	std::cout << "Y:" << tet.y << std::endl;
 	std::cout << "Score: " << score << std::endl;
@@ -841,8 +855,14 @@ void Init()
 	lines_text.setFillColor(sf::Color::White);
 	lines_text.setString("LINES \n" + std::to_string(lines));
 
+	pause_text.setFont(retro_font);
+	pause_text.setCharacterSize(char_size);
+	pause_text.setFillColor(sf::Color::White);
+	pause_text.setString("GAME PAUSED\n");
+
+
 	score_text.setPosition(WINDOW_WIDTH, 0);
 	level_text.setPosition(WINDOW_WIDTH, score_text.getGlobalBounds().top + score_text.getGlobalBounds().height * 1.5f);
 	lines_text.setPosition(WINDOW_WIDTH, level_text.getGlobalBounds().top + level_text.getGlobalBounds().height * 1.5f);
-
+	pause_text.setPosition(WINDOW_WIDTH / 2.0f - pause_text.getGlobalBounds().width / 2.0f, WINDOW_HEIGHT / 2.0f);
 }

@@ -22,7 +22,7 @@ extern const sf::Color block_colors[];
 
 enum MoveDir { LEFT, RIGHT, DOWN, ROTATE };
 
-enum class Sound { game_over, line, move, new_game, level, place, rotate, tetris};
+enum class Sound { game_over, line, move, new_game, next_level, place, rotate, tetris};
 
 struct Tetromino
 {
@@ -50,6 +50,7 @@ extern sf::Font retro_font;
 extern sf::Text score_text;
 extern sf::Text level_text;
 extern sf::Text lines_text;
+extern sf::Text pause_text;
 
 #pragma region Shapes
 
