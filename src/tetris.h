@@ -40,6 +40,7 @@ extern float timer;
 extern uint32_t score;
 extern uint16_t level;
 extern uint16_t lines;
+extern uint16_t last_piece_index;
 
 extern sf::SoundBuffer sound_buffers[8];
 extern sf::Sound sound_effect;

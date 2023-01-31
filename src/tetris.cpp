@@ -32,6 +32,7 @@ float timer = 0;
 uint32_t score = 0;
 uint16_t level = 1;
 uint16_t lines = 0;
+uint16_t last_piece_index = 0;
 
 sf::SoundBuffer sound_buffers[8];
 sf::Sound sound_effect;
@@ -361,7 +362,14 @@ bool CollisionCheck(Tetromino& tet, uint16_t* board, MoveDir dir, uint16_t rot =
 
 void SpawnNewTet(Tetromino& tet)
 {
-	int shape_index = rand() % 5;
+	// NES Tetris style randomizer
+	int shape_index = rand() % 8;
+	if (shape_index == last_piece_index || shape_index == 7)
+	{
+		shape_index = rand() % 7;
+	}
+	last_piece_index = shape_index;
+
 	std::copy(shapes[shape_index], shapes[shape_index] + 4, tet.shape_current);
 	std::copy(shapes[shape_index], shapes[shape_index] + 16, tet.shape_rotations);
 	tet.x = 6;
