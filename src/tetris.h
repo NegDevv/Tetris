@@ -16,7 +16,7 @@ extern const uint16_t ROW_EMPTY;
 extern const uint16_t ROW_TOP;
 extern const uint16_t ROW_BOTTOW;
 
-enum Color { Red, Green, Blue, Cyan, Yellow, Orange, Magenta, Grey, COUNT };
+enum Color { Cyan, Blue, Orange, Yellow, Green, Magenta, Red, Grey, COUNT };
 
 extern const sf::Color block_colors[];
 
@@ -40,7 +40,7 @@ extern float timer;
 extern uint32_t score;
 extern uint16_t level;
 extern uint16_t lines;
-extern uint16_t last_piece_index;
+extern uint16_t next_piece_index;
 
 extern sf::SoundBuffer sound_buffers[8];
 extern sf::Sound sound_effect;
@@ -53,6 +53,7 @@ extern sf::Text level_text;
 extern sf::Text lines_text;
 extern sf::Text pause_text;
 extern sf::Text top_score_text;
+extern sf::Text next_piece_text;
 
 #pragma region Shapes
 
@@ -107,6 +108,8 @@ void CopyPixelRow(sf::Image& board_image, uint16_t src_y, uint16_t dest_y);
 void Update(Tetromino& tet, uint16_t* board, sf::Image& board_image, sf::Vector2i* drop_proj_pixels);
 
 void DrawTet(Tetromino& tet, sf::Image& tet_image, sf::Vector2i* drop_proj_pixels);
+
+void DrawNextTet(sf::Image& next_tet_image);
 
 void LoadAudio();
 

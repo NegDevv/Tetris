@@ -15,13 +15,13 @@ const uint16_t ROW_BOTTOW = 0b0011111111111100;
 
 const sf::Color block_colors[]
 {
-	sf::Color(255, 0, 0),
-	sf::Color(0, 255, 0),
-	sf::Color(0, 0, 255),
 	sf::Color(0, 204, 204),
-	sf::Color(204, 204, 0),
+	sf::Color(0, 0, 255),
 	sf::Color(204, 102, 0),
+	sf::Color(204, 204, 0),
+	sf::Color(0, 255, 0),
 	sf::Color(153, 0, 204),
+	sf::Color(255, 0, 0),
 	sf::Color(119, 119, 119),
 	sf::Color(0, 0, 0)
 };
@@ -32,7 +32,7 @@ float timer = 0;
 uint32_t score = 0;
 uint16_t level = 1;
 uint16_t lines = 0;
-uint16_t last_piece_index = 0;
+uint16_t next_piece_index = 0;
 
 sf::SoundBuffer sound_buffers[8];
 sf::Sound sound_effect;
@@ -44,6 +44,7 @@ sf::Text level_text;
 sf::Text lines_text;
 sf::Text pause_text;
 sf::Text top_score_text;
+sf::Text next_piece_text;
 
 #pragma region Shapes
 
@@ -228,26 +229,26 @@ const uint16_t shape_Z[16]
 	// Rot 0
 	0b0000000000000000,
 	0b0000000000000000,
-	0b0000011000000000,
 	0b0000001100000000,
+	0b0000000110000000,
 
 	// Rot 1
 	0b0000000000000000,
-	0b0000000010000000,
-	0b0000000110000000,
 	0b0000000100000000,
+	0b0000001100000000,
+	0b0000001000000000,
 
 	// Rot 2
 	0b0000000000000000,
 	0b0000000000000000,
-	0b0000011000000000,
 	0b0000001100000000,
+	0b0000000110000000,
 
 	// Rot 3
 	0b0000000000000000,
-	0b0000000010000000,
-	0b0000000110000000,
 	0b0000000100000000,
+	0b0000001100000000,
+	0b0000001000000000,
 };
 
 
@@ -362,20 +363,22 @@ bool CollisionCheck(Tetromino& tet, uint16_t* board, MoveDir dir, uint16_t rot =
 
 void SpawnNewTet(Tetromino& tet)
 {
+	std::copy(shapes[next_piece_index], shapes[next_piece_index] + 4, tet.shape_current);
+	std::copy(shapes[next_piece_index], shapes[next_piece_index] + 16, tet.shape_rotations);
+	tet.color = block_colors[next_piece_index];
+
 	// NES Tetris style randomizer
 	int shape_index = rand() % 8;
-	if (shape_index == last_piece_index || shape_index == 7)
+	if (shape_index == next_piece_index || shape_index == 7)
 	{
 		shape_index = rand() % 7;
 	}
-	last_piece_index = shape_index;
+	
+	next_piece_index = shape_index;
 
-	std::copy(shapes[shape_index], shapes[shape_index] + 4, tet.shape_current);
-	std::copy(shapes[shape_index], shapes[shape_index] + 16, tet.shape_rotations);
 	tet.x = 6;
 	tet.y = 0;
 	tet.rot = 0;
-	tet.color = block_colors[rand() % (COUNT - 1)];
 	timer = 0;
 	std::cout << "New Tetromino!\n";
 }
@@ -919,6 +922,24 @@ void DrawTet(Tetromino& tet, sf::Image& tet_image, sf::Vector2i* drop_proj_pixel
 	}
 }
 
+void DrawNextTet(sf::Image& next_tet_image)
+{
+	for (size_t y = 0; y < 4; y++)
+	{
+		for (size_t x = 0; x < 4; x++)
+		{
+			if (shapes[next_piece_index][y] & (1 << (9 - x)))
+			{
+				next_tet_image.setPixel(x, y, block_colors[next_piece_index]);
+			}
+			else
+			{
+				next_tet_image.setPixel(x, y, sf::Color::Transparent);
+			}
+		}
+	}
+}
+
 void LoadAudio()
 {
 	if (!sound_buffers[0].loadFromFile("resources/audio/soundfx/tetris_game_over.wav"))
@@ -974,6 +995,7 @@ void Init()
 	shapes[5] = shape_T;
 	shapes[6] = shape_Z;
 
+	next_piece_index = rand() % 7;
 
 	LoadAudio();
 
@@ -1009,10 +1031,16 @@ void Init()
 	top_score_text.setFillColor(sf::Color::White);
 	top_score_text.setString("TOP\n" + std::to_string(GetHighestScore()));
 
+	next_piece_text.setFont(retro_font);
+	next_piece_text.setCharacterSize(char_size);
+	next_piece_text.setFillColor(sf::Color::White);
+	next_piece_text.setString("NEXT\n");
+
 
 	score_text.setPosition(WINDOW_WIDTH, 0);
 	level_text.setPosition(WINDOW_WIDTH, score_text.getGlobalBounds().top + score_text.getGlobalBounds().height * 1.5f);
 	lines_text.setPosition(WINDOW_WIDTH, level_text.getGlobalBounds().top + level_text.getGlobalBounds().height * 1.5f);
 	top_score_text.setPosition(WINDOW_WIDTH, lines_text.getGlobalBounds().top + lines_text.getGlobalBounds().height * 1.5f);
 	pause_text.setPosition(WINDOW_WIDTH / 2.0f - pause_text.getGlobalBounds().width / 2.0f, WINDOW_HEIGHT / 2.0f);
+	next_piece_text.setPosition(WINDOW_WIDTH, top_score_text.getGlobalBounds().top + top_score_text.getGlobalBounds().height * 1.5f);
 }
